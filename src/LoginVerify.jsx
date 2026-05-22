@@ -11,11 +11,11 @@ export default function LoginVerify() {
 
     if (!token) {
       setStatusMessage('⚠️ Token tidak ditemukan gans!');
-      setTimeout(() => { window.location.href = '/login'; }, 2000);
+      setTimeout(() => { window.location.href = '/login'; }, 1500);
       return;
     }
 
-    // Tembak verifikasi ke backend dengan header khusus bypass warning Ngrok
+    // Tembak verifikasi ke backend (Ngrok)
     fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`, {
       headers: {
         'ngrok-skip-browser-warning': 'true',
@@ -24,10 +24,17 @@ export default function LoginVerify() {
     })
       .then((res) => res.json())
       .then((resData) => {
-        if (resData.status === 'success') {
+        if (resData.status === 'success' && resData.user) {
           setStatusMessage('✅ Otentikasi Berhasil! Menyinkronkan dashboard...');
+          
+          // 🎯 KUNCI SESI USER DI BROWSER
           localStorage.setItem('user_session', JSON.stringify(resData.user));
-          setTimeout(() => { window.location.href = '/'; }, 1500);
+          
+          // 给 JEDA AGAR LOCALSTORAGE SELESAI MENULIS SEMPURNA DI VERCEL
+          setTimeout(() => {
+            window.location.replace('/'); // Menggunakan replace agar history back tidak rusak
+          }, 1000);
+
         } else {
           setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
           setTimeout(() => { window.location.href = '/login'; }, 2000);
