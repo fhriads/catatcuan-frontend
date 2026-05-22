@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, ArrowUpRight, ArrowDownRight, User, Users, TrendingUp, LogOut } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // 🎯 UBAH INI SESUAI IP LAPTOP ASUS (SERVER BACKEND) KAMU GANS
-  const IP_LAPTOP_ASUS = '192.168.1.7'; 
 
   const handleLogout = () => {
     localStorage.removeItem('user_session');
@@ -21,8 +20,8 @@ export default function App() {
       return;
     }
 
-    // Ambil data real dari backend Asus
-    fetch(`http://${IP_LAPTOP_ASUS}:5000/api/dashboard/stats?telegram_id=${userSession.telegram_id}`)
+    // Ambil data real dari backend (Ngrok)
+    fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.status === 'success') {
@@ -45,10 +44,8 @@ export default function App() {
     );
   }
 
-  // Jika data gagal ditarik, pasang fallback default agar UI tidak crash
   const stats = data || { balance: 0, totalIncome: 0, totalExpense: 0, transactions: [], walletName: 'Dompet Utama', isShared: false };
 
-  // Helper format Rupiah
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.abs(angka));
   };
@@ -165,7 +162,6 @@ export default function App() {
               Belum ada riwayat transaksi. Ketik sesuatu di Bot Telegram untuk mengisi gans!
             </div>
           ) : (
-            // Mengubah array objek transaksi PostgreSQL menjadi elemen baris list HTML
             stats.transactions.map((tx, index) => {
               const isPemasukan = tx.amount > 0;
               return (

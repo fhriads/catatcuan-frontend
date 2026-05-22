@@ -1,65 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginVerify() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [error, setError] = useState('');
-  
+  const [statusMessage, setStatusMessage] = useState('Memvalidasi token keamanan...');
+
   useEffect(() => {
-    const token = searchParams.get('token');
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get('token');
 
     if (!token) {
-      setError('⚠️ Token otentikasi tidak ditemukan di URL gans!');
+      setStatusMessage('⚠️ Token tidak ditemukan gans!');
+      setTimeout(() => { window.location.href = '/login'; }, 2000);
       return;
     }
 
-    // Tembak ke server Asus untuk validasi JWT token-nya
-    fetch(`http://192.168.1.7:5000/api/auth/verify?token=${token}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Token kedaluwarsa atau tidak valid!');
-        return res.json();
-      })
-      .then((data) => {
-        if (data.status === 'success') {
-          // Simpan data user ke localStorage browser sebagai penanda sudah login
-          localStorage.setItem('user_session', JSON.stringify(data.user));
-          
-          // Alihkan halaman langsung ke Dashboard utama setelah sukses
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 1500);
+    // Tembak verifikasi ke server backend (Ngrok)
+    fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`)
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.status === 'success') {
+          setStatusMessage('✅ Otentikasi Berhasil! Menyinkronkan dashboard...');
+          localStorage.setItem('user_session', JSON.stringify(resData.user));
+          setTimeout(() => { window.location.href = '/'; }, 1500);
+        } else {
+          setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
+          setTimeout(() => { window.location.href = '/login'; }, 2000);
         }
       })
       .catch((err) => {
-        setError(err.message || 'Gagal melakukan verifikasi ke server.');
+        console.error('❌ Eror Verifikasi Token:', err);
+        setStatusMessage('❌ Gagal terhubung ke server otentikasi.');
+        setTimeout(() => { window.location.href = '/login'; }, 2000);
       });
-  }, [searchParams, navigate]);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#121214] flex items-center justify-center p-4 text-white">
-      <div className="bg-[#1E1E24] border-4 border-black p-8 rounded-2xl shadow-[8px_8px_0px_0px_#000000] max-w-sm w-full text-center">
-        {!error ? (
-          <div className="space-y-4">
-            <RefreshCw className="w-12 h-12 text-[#FFDE4D] animate-spin mx-auto" />
-            <h3 className="text-xl font-black tracking-tight">Memvalidasi Akun...</h3>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">// Menghubungkan sesi Telegram ke laptop ROG</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="bg-[#2A2424] text-[#FF4A4A] p-4 border-2 border-black rounded-xl font-bold text-sm shadow-[4px_4px_0px_0px_#000000]">
-              {error}
-            </div>
-            <button 
-              onClick={() => navigate('/login')}
-              className="mt-2 bg-white text-black font-black text-xs px-4 py-2 border-2 border-black shadow-[2px_2px_0px_0px_#000000] rounded-lg cursor-pointer"
-            >
-              Kembali ke Login
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen bg-[#121214] flex flex-col gap-4 items-center justify-center text-white font-sans p-4">
+      <div className="w-10 h-10 border-4 border-[#FFDE4D] border-t-transparent rounded-full animate-spin"></div>
+      <p className="font-black text-sm tracking-wide uppercase bg-[#1E1E24] border-2 border-black p-4 rounded-xl shadow-[4px_4px_0px_0px_#000000]">
+        ⚡ {statusMessage}
+      </p>
     </div>
   );
 }
