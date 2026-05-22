@@ -20,8 +20,13 @@ export default function App() {
       return;
     }
 
-    // Ambil data real dari backend (Ngrok)
-    fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`)
+    // Ambil data real dari backend dengan header khusus bypass warning Ngrok
+    fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    })
       .then((res) => res.json())
       .then((resData) => {
         if (resData.status === 'success') {

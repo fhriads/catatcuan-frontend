@@ -15,8 +15,13 @@ export default function LoginVerify() {
       return;
     }
 
-    // Tembak verifikasi ke server backend (Ngrok)
-    fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`)
+    // Tembak verifikasi ke backend dengan header khusus bypass warning Ngrok
+    fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    })
       .then((res) => res.json())
       .then((resData) => {
         if (resData.status === 'success') {
