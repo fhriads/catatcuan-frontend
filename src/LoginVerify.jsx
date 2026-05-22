@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginVerify() {
   const [statusMessage, setStatusMessage] = useState('Memvalidasi token keamanan...');
+  // 🎯 SAKELAR PENGUNCI: Mencegah useEffect berjalan 2 kali di Vercel
+  const isVerifying = useRef(false);
 
   useEffect(() => {
+    // Jika sakelar sudah terkunci (true), batalkan eksekusi kedua
+    if (isVerifying.current) return;
+
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get('token');
 
@@ -14,6 +19,9 @@ export default function LoginVerify() {
       setTimeout(() => { window.location.href = '/login'; }, 1500);
       return;
     }
+
+    // Kunci sakelar menjadi true agar tembakan kedua tidak bisa lewat
+    isVerifying.current = true;
 
     // Tembak verifikasi ke backend (Ngrok)
     fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`, {
@@ -27,14 +35,11 @@ export default function LoginVerify() {
         if (resData.status === 'success' && resData.user) {
           setStatusMessage('✅ Otentikasi Berhasil! Menyinkronkan dashboard...');
           
-          // 🎯 KUNCI SESI USER DI BROWSER
+          // Simpan sesi user ke browser
           localStorage.setItem('user_session', JSON.stringify(resData.user));
           
-          // 给 JEDA AGAR LOCALSTORAGE SELESAI MENULIS SEMPURNA DI VERCEL
-          setTimeout(() => {
-            window.location.replace('/'); // Menggunakan replace agar history back tidak rusak
-          }, 1000);
-
+          // Redirect instan menggunakan replace tanpa jeda lama
+          window.location.replace('/');
         } else {
           setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
           setTimeout(() => { window.location.href = '/login'; }, 2000);
