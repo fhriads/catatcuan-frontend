@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // 🎯 Simpan user di dalam state
 
   const handleLogout = () => {
     localStorage.removeItem('user_session');
@@ -13,6 +14,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Pengecekan sesi dipindahkan ke dalam useEffect agar sinkron di Vercel
     const userSession = JSON.parse(localStorage.getItem('user_session'));
     
     if (!userSession) {
@@ -20,7 +22,9 @@ export default function App() {
       return;
     }
 
-    // Ambil data real dari backend dengan header khusus bypass warning Ngrok
+    setUser(userSession); // Set data user ke state jika ada
+
+    // Ambil data real dari backend (Ngrok)
     fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`, {
       headers: {
         'ngrok-skip-browser-warning': 'true',
@@ -37,10 +41,8 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  const userSession = JSON.parse(localStorage.getItem('user_session'));
-  const namaUser = userSession ? userSession.first_name : 'Developer';
-
-  if (loading) {
+  // Tampilkan layar loading pelindung selama sesi atau data database sedang ditarik
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#121214] flex flex-col gap-3 items-center justify-center text-white font-black tracking-wider uppercase text-sm">
         <div className="w-8 h-8 border-4 border-[#FFDE4D] border-t-transparent rounded-full animate-spin"></div>
@@ -67,7 +69,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-black/40 px-4 py-2 border-2 border-black rounded-lg">
             <User className="w-5 h-5 text-[#FFDE4D]" />
-            <span className="font-bold text-sm tracking-wide">{namaUser}</span>
+            <span className="font-bold text-sm tracking-wide">{user.first_name}</span>
           </div>
           <button 
             onClick={handleLogout}
