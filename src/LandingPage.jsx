@@ -59,7 +59,7 @@ export default function LandingPage() {
                     className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-10 px-4"
                 >
                     <motion.a
-                        href="https://t.me/catatcuan_bot"
+                        href="https://t.me/catatcuan_dev_bot"
                         target="_blank"
                         whileHover={{ scale: 1.05, rotate: 1 }}
                         whileTap={{ scale: 0.95 }}
