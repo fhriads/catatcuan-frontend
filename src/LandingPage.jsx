@@ -108,13 +108,15 @@ export default function LandingPage() {
             transition={bounceTransition}
             className="bg-[#FF9F43] border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between"
           >
+          <div className="bg-[#FF9F43] border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between transition-transform duration-300 hover:rotate-1">
             <div className="text-3xl">⚡</div>
             <div>
-              <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">PostgreSQL Real-Time sync</h3>
+              <h3 className="text-lg md:text-xl font-black uppercase tracking-tight">PostgreSQL Real-Time Sync</h3>
               <p className="font-bold text-sm text-black/80 mt-1">
-                Data terkirim kurang dari 0.3 detik langsung ke server lokal Asus-mu gans.
+                Infrastruktur database terpusat dengan latensi di bawah 0.3 detik. Data keuanganmu langsung terenkripsi dan ter-sync secara real-time.
               </p>
             </div>
+          </div>
           </motion.div>
 
           <motion.div 
