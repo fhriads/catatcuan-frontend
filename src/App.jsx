@@ -14,37 +14,62 @@ export default function App() {
   };
 
   // 🎯 UBAH DI APP.JSX KAMU GANS:
-  useEffect(() => {
-    // 1. Ambil session mentah dari localStorage
-    const savedSession = localStorage.getItem('user_session');
-    if (!savedSession) return;
+  // 🎯 GANTI BLOK USEEFFECT DI FILE LOGINVERIFY.JSX FRONTEND KAMU GANS:
+useEffect(() => {
+  // 🚀 SAKELAR ABSOLUT: Jika sedang memverifikasi atau sudah sukses, BLOKIR SEMUA TEMBAKAN KEDUA!
+  if (isVerifying.current) return;
 
-    const userSession = JSON.parse(savedSession);
+  const queryParams = new URLSearchParams(window.location.search);
+  const token = queryParams.get('token');
 
-    // 🚀 SAKLAR PENGAMAN: Jika telegram_id tidak ada, JANGAN MENEMBAK API!
-    if (!userSession || !userSession.telegram_id) {
-      console.error("⚠️ ID Telegram tidak ditemukan di session gans!");
-      return;
+  if (!token) {
+    setStatusMessage('⚠️ Token tidak ditemukan gans!');
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
+    return;
+  }
+
+  // Kunci sakelar SEBELUM melakukan fetch agar tembakan kedua langsung mental!
+  isVerifying.current = true;
+  setStatusMessage('Memvalidasi token keamanan...');
+
+  // Tembak verifikasi murni ke backend gans
+  fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
     }
-
-    // 2. Jika lolos pengaman, baru hantam fetch data real gans!
-    fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`, {
-      headers: {
-        'ngrok-skip-browser-warning': 'true',
-        'Content-Type': 'application/json'
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error('Token sudah hangus atau invalid gans!');
+      return res.json();
+    })
+    .then((resData) => {
+      if (resData.status === 'success' && resData.user) {
+        setStatusMessage('✅ Otentikasi Berhasil! Menyinkronkan dashboard...');
+        
+        // 🔥 PASTIKAN KEY YANG DISIMPAN ADALAH 'user_session' DENGAN DATA LENGKAP
+        localStorage.setItem('user_session', JSON.stringify(resData.user));
+        
+        // Beri jeda 500ms agar localStorage ter-write sempurna sebelum pindah halaman
+        setTimeout(() => {
+          window.location.replace('/dashboard');
+        }, 500);
+      } else {
+        setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
+        setTimeout(() => { window.location.href = '/login'; }, 2000);
       }
     })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((resData) => {
-        if (resData.status === 'success') {
-          setData(resData);
-        }
-      })
-      .catch((err) => console.error('❌ Gagal memuat data bento real:', err));
-  }, []);
+    .catch((err) => {
+      console.error('❌ Eror Verifikasi Token:', err);
+      // JIKA tembakan pertama sudah sempat sukses, jangan biarkan catch merusak halaman gans!
+      if (localStorage.getItem('user_session')) {
+        window.location.replace('/dashboard');
+      } else {
+        setStatusMessage('❌ Gagal terhubung ke server otentikasi.');
+        setTimeout(() => { window.location.href = '/login'; }, 2000);
+      }
+    });
+}, []);
 
   // Tampilkan layar loading pelindung selama sesi atau data database sedang ditarik
   if (loading || !user) {
