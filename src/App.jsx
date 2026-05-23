@@ -6,72 +6,62 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null); // 🎯 Simpan user di dalam state
+  const [user, setUser] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem('user_session');
     window.location.href = '/login';
   };
 
-  // 🎯 UBAH DI APP.JSX KAMU GANS:
-  // 🎯 GANTI BLOK USEEFFECT DI FILE LOGINVERIFY.JSX FRONTEND KAMU GANS:
-useEffect(() => {
-  // 🚀 SAKELAR ABSOLUT: Jika sedang memverifikasi atau sudah sukses, BLOKIR SEMUA TEMBAKAN KEDUA!
-  if (isVerifying.current) return;
+  useEffect(() => {
+    // 1. Ambil session user yang ditulis secara sukses oleh LoginVerify.jsx
+    const savedSession = localStorage.getItem('user_session');
 
-  const queryParams = new URLSearchParams(window.location.search);
-  const token = queryParams.get('token');
-
-  if (!token) {
-    setStatusMessage('⚠️ Token tidak ditemukan gans!');
-    setTimeout(() => { window.location.href = '/login'; }, 1500);
-    return;
-  }
-
-  // Kunci sakelar SEBELUM melakukan fetch agar tembakan kedua langsung mental!
-  isVerifying.current = true;
-  setStatusMessage('Memvalidasi token keamanan...');
-
-  // Tembak verifikasi murni ke backend gans
-  fetch(`${API_BASE_URL}/api/auth/verify?token=${token}`, {
-    headers: {
-      'ngrok-skip-browser-warning': 'true',
-      'Content-Type': 'application/json'
+    if (!savedSession) {
+      console.error('⚠️ Sesi tidak ditemukan gans, menendang ke /login');
+      window.location.href = '/login';
+      return;
     }
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error('Token sudah hangus atau invalid gans!');
-      return res.json();
-    })
-    .then((resData) => {
-      if (resData.status === 'success' && resData.user) {
-        setStatusMessage('✅ Otentikasi Berhasil! Menyinkronkan dashboard...');
-        
-        // 🔥 PASTIKAN KEY YANG DISIMPAN ADALAH 'user_session' DENGAN DATA LENGKAP
-        localStorage.setItem('user_session', JSON.stringify(resData.user));
-        
-        // Beri jeda 500ms agar localStorage ter-write sempurna sebelum pindah halaman
-        setTimeout(() => {
-          window.location.replace('/dashboard');
-        }, 500);
-      } else {
-        setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
-        setTimeout(() => { window.location.href = '/login'; }, 2000);
-      }
-    })
-    .catch((err) => {
-      console.error('❌ Eror Verifikasi Token:', err);
-      // JIKA tembakan pertama sudah sempat sukses, jangan biarkan catch merusak halaman gans!
-      if (localStorage.getItem('user_session')) {
-        window.location.replace('/dashboard');
-      } else {
-        setStatusMessage('❌ Gagal terhubung ke server otentikasi.');
-        setTimeout(() => { window.location.href = '/login'; }, 2000);
-      }
-    });
-}, []);
 
-  // Tampilkan layar loading pelindung selama sesi atau data database sedang ditarik
+    const userSession = JSON.parse(savedSession);
+    setUser(userSession); // Set state user agar layout header nama bisa nampil
+
+    // 🛡️ SECURITY GUARD: Cegah request jika telegram_id gaib/undefined
+    if (!userSession || !userSession.telegram_id || userSession.telegram_id === 'undefined') {
+      console.error('⚠️ ID Telegram tidak valid atau kosong di session gans!');
+      setLoading(false);
+      return;
+    }
+
+    // 2. Tembak endpoint stats database PostgreSQL yang asli gans!
+    fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 🔑 BYPASS WARN NGROK: Amankan jalur fetch biar data JSON keluar murni
+        'ngrok-skip-browser-warning': 'true'
+      }
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP Error! Status backend: ${res.status}`);
+        return res.json();
+      })
+      .then((resData) => {
+        if (resData.status === 'success') {
+          setData(resData.data); // Simpan hasil query row dari database lokal
+        } else {
+          console.error('❌ Gagal sinkronisasi data bento:', resData.message);
+        }
+      })
+      .catch((err) => {
+        console.error('❌ Eror memuat data bento real:', err.message);
+      })
+      .finally(() => {
+        setLoading(false); // Matikan loading jika fetch sudah selesai (sukses/gagal)
+      });
+  }, []);
+
+  // 🛡️ TAMPILAN PELINDUNG LOADING (Akan mati begitu data/sesi user aman ter-set)
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#121214] flex flex-col gap-3 items-center justify-center text-white font-black tracking-wider uppercase text-sm">
@@ -81,7 +71,12 @@ useEffect(() => {
     );
   }
 
-  const stats = data || { balance: 0, totalIncome: 0, totalExpense: 0, transactions: [], walletName: 'Dompet Utama', isShared: false };
+  // 📊 MENGOLAH DATA REAL DARI POSTGRESQL (Menggunakan data array yang dikirim dari backend)
+  const isDataArray = Array.isArray(data);
+  const totalIncome = isDataArray ? data.filter(tx => Number(tx.amount) > 0).reduce((acc, tx) => acc + Number(tx.amount), 0) : 0;
+  const totalExpense = isDataArray ? data.filter(tx => Number(tx.amount) < 0).reduce((acc, tx) => acc + Math.abs(Number(tx.amount)), 0) : 0;
+  const balance = totalIncome - totalExpense;
+  const transactionsList = isDataArray ? data : [];
 
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.abs(angka));
@@ -99,7 +94,7 @@ useEffect(() => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-black/40 px-4 py-2 border-2 border-black rounded-lg">
             <User className="w-5 h-5 text-[#FFDE4D]" />
-            <span className="font-bold text-sm tracking-wide">{user.first_name}</span>
+            <span className="font-bold text-sm tracking-wide">@{user.username || 'User'}</span>
           </div>
           <button
             onClick={handleLogout}
@@ -118,9 +113,9 @@ useEffect(() => {
         <div className="md:col-span-2 bg-[#1E1E24] border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000000] flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Total Balance ({stats.walletName})</p>
+              <p className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Total Balance (Dompet Utama)</p>
               <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-                Rp {stats.balance.toLocaleString('id-ID')}
+                {formatRupiah(balance)}
               </h2>
             </div>
             <div className="bg-[#FFDE4D] text-black p-3 border-2 border-black shadow-[2px_2px_0px_0px_#000000] rounded-xl">
@@ -133,8 +128,7 @@ useEffect(() => {
               <ArrowUpRight className="w-4 h-4" /> Real-time Sync
             </span>
             <span className="bg-black/50 text-slate-300 font-bold text-xs px-3 py-1.5 border border-slate-700 rounded-lg flex items-center gap-1.5">
-              {stats.isShared ? <Users className="w-4 h-4 text-[#FFDE4D]" /> : <User className="w-4 h-4 text-[#FFDE4D]" />}
-              {stats.isShared ? 'Dompet Bersama' : 'Dompet Pribadi'}
+              <User className="w-4 h-4 text-[#FFDE4D]" /> Dompet Pribadi
             </span>
           </div>
         </div>
@@ -146,7 +140,7 @@ useEffect(() => {
               <TrendingUp className="w-3.5 h-3.5" /> AI Financial Status
             </div>
             <p className="font-extrabold text-lg leading-snug">
-              {stats.balance < 50000
+              {balance < 50000
                 ? `"Waduh gans, dompetmu lagi kritis! Stop dulu top-up robux atau jajan yang tidak perlu ya."`
                 : `"Kondisi keuanganmu aman terkendali. Pertahankan ritme pencatatan ini, Fahri!"`}
             </p>
@@ -161,7 +155,7 @@ useEffect(() => {
           </div>
           <div>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Income</p>
-            <p className="text-xl font-black text-[#38E54D]">{formatRupiah(stats.totalIncome)}</p>
+            <p className="text-xl font-black text-[#38E54D]">{formatRupiah(totalIncome)}</p>
           </div>
         </div>
 
@@ -172,7 +166,7 @@ useEffect(() => {
           </div>
           <div>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Expense</p>
-            <p className="text-xl font-black text-[#FF4A4A]">{formatRupiah(stats.totalExpense)}</p>
+            <p className="text-xl font-black text-[#FF4A4A]">{formatRupiah(totalExpense)}</p>
           </div>
         </div>
 
@@ -194,29 +188,30 @@ useEffect(() => {
         <h3 className="text-xl font-black tracking-tight mb-4 uppercase text-slate-300">// Live Feed Transaksi PostgreSQL</h3>
         <div className="bg-[#1E1E24] border-4 border-black rounded-2xl shadow-[6px_6px_0px_0px_#000000] overflow-hidden">
 
-          {stats.transactions.length === 0 ? (
+          {transactionsList.length === 0 ? (
             <div className="p-8 text-center font-bold text-slate-500 uppercase tracking-wider text-sm">
               Belum ada riwayat transaksi. Ketik sesuatu di Bot Telegram untuk mengisi gans!
             </div>
           ) : (
-            stats.transactions.map((tx, index) => {
-              const isPemasukan = tx.amount > 0;
+            transactionsList.map((tx, index) => {
+              const amountNumber = Number(tx.amount || tx.jumlah || 0);
+              const isPemasukan = amountNumber > 0;
               return (
                 <div
                   key={tx.id}
-                  className={`p-4 flex justify-between items-center ${index !== stats.transactions.length - 1 ? 'border-b-2 border-black' : ''} ${index % 2 === 0 ? 'bg-black/10' : ''}`}
+                  className={`p-4 flex justify-between items-center ${index !== transactionsList.length - 1 ? 'border-b-2 border-black' : ''} ${index % 2 === 0 ? 'bg-black/10' : ''}`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`w-2.5 h-2.5 rounded-full ${isPemasukan ? 'bg-[#38E54D]' : 'bg-[#FF4A4A]'}`}></span>
                     <div>
-                      <p className="font-black text-sm text-white">{tx.description}</p>
+                      <p className="font-black text-sm text-white">{tx.description || tx.keterangan || 'No Description'}</p>
                       <p className="text-xs text-slate-500 font-bold">
-                        Kategori: {tx.category} • {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        Kategori: {tx.category || tx.kategori || 'General'} • {new Date(tx.transaction_date || tx.tanggal || tx.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                   <span className={`font-black text-sm ${isPemasukan ? 'text-[#38E54D]' : 'text-[#FF4A4A]'}`}>
-                    {isPemasukan ? '+' : '-'} {formatRupiah(tx.amount)}
+                    {isPemasukan ? '+' : '-'} {formatRupiah(amountNumber)}
                   </span>
                 </div>
               );
