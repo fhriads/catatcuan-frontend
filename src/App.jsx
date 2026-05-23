@@ -13,32 +13,37 @@ export default function App() {
     window.location.href = '/login';
   };
 
+  // 🎯 UBAH DI APP.JSX KAMU GANS:
   useEffect(() => {
-    // Pengecekan sesi dipindahkan ke dalam useEffect agar sinkron di Vercel
-    const userSession = JSON.parse(localStorage.getItem('user_session'));
-    
-    if (!userSession) {
-      window.location.href = '/login';
+    // 1. Ambil session mentah dari localStorage
+    const savedSession = localStorage.getItem('user_session');
+    if (!savedSession) return;
+
+    const userSession = JSON.parse(savedSession);
+
+    // 🚀 SAKLAR PENGAMAN: Jika telegram_id tidak ada, JANGAN MENEMBAK API!
+    if (!userSession || !userSession.telegram_id) {
+      console.error("⚠️ ID Telegram tidak ditemukan di session gans!");
       return;
     }
 
-    setUser(userSession); // Set data user ke state jika ada
-
-    // Ambil data real dari backend (Ngrok)
+    // 2. Jika lolos pengaman, baru hantam fetch data real gans!
     fetch(`${API_BASE_URL}/api/dashboard/stats?telegram_id=${userSession.telegram_id}`, {
       headers: {
         'ngrok-skip-browser-warning': 'true',
         'Content-Type': 'application/json'
       }
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((resData) => {
         if (resData.status === 'success') {
           setData(resData);
         }
       })
-      .catch((err) => console.error('❌ Gagal memuat data bento real:', err))
-      .finally(() => setLoading(false));
+      .catch((err) => console.error('❌ Gagal memuat data bento real:', err));
   }, []);
 
   // Tampilkan layar loading pelindung selama sesi atau data database sedang ditarik
@@ -59,7 +64,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#121214] text-slate-100 p-6 font-sans selection:bg-[#FFDE4D] selection:text-black">
-      
+
       {/* HEADER NAVBAR */}
       <header className="max-w-6xl mx-auto mb-8 flex justify-between items-center bg-[#1E1E24] border-4 border-black p-4 shadow-[4px_4px_0px_0px_#000000] rounded-xl">
         <div className="flex items-center gap-2">
@@ -71,7 +76,7 @@ export default function App() {
             <User className="w-5 h-5 text-[#FFDE4D]" />
             <span className="font-bold text-sm tracking-wide">{user.first_name}</span>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="p-2 bg-[#FF4A4A] border-2 border-black rounded-lg text-white shadow-[2px_2px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none"
             title="Log Out"
@@ -83,7 +88,7 @@ export default function App() {
 
       {/* BENTO GRID LAYOUT */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* BOX 1: REAL BALANCE */}
         <div className="md:col-span-2 bg-[#1E1E24] border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000000] flex flex-col justify-between">
           <div className="flex justify-between items-start">
@@ -97,7 +102,7 @@ export default function App() {
               <Wallet className="w-6 h-6" />
             </div>
           </div>
-          
+
           <div className="mt-8 flex flex-wrap gap-3">
             <span className="bg-[#38E54D] text-black font-black text-xs px-3 py-1.5 border-2 border-black rounded-lg flex items-center gap-1">
               <ArrowUpRight className="w-4 h-4" /> Real-time Sync
@@ -116,7 +121,7 @@ export default function App() {
               <TrendingUp className="w-3.5 h-3.5" /> AI Financial Status
             </div>
             <p className="font-extrabold text-lg leading-snug">
-              {stats.balance < 50000 
+              {stats.balance < 50000
                 ? `"Waduh gans, dompetmu lagi kritis! Stop dulu top-up robux atau jajan yang tidak perlu ya."`
                 : `"Kondisi keuanganmu aman terkendali. Pertahankan ritme pencatatan ini, Fahri!"`}
             </p>
@@ -163,7 +168,7 @@ export default function App() {
       <section className="max-w-6xl mx-auto mt-10">
         <h3 className="text-xl font-black tracking-tight mb-4 uppercase text-slate-300">// Live Feed Transaksi PostgreSQL</h3>
         <div className="bg-[#1E1E24] border-4 border-black rounded-2xl shadow-[6px_6px_0px_0px_#000000] overflow-hidden">
-          
+
           {stats.transactions.length === 0 ? (
             <div className="p-8 text-center font-bold text-slate-500 uppercase tracking-wider text-sm">
               Belum ada riwayat transaksi. Ketik sesuatu di Bot Telegram untuk mengisi gans!
@@ -172,8 +177,8 @@ export default function App() {
             stats.transactions.map((tx, index) => {
               const isPemasukan = tx.amount > 0;
               return (
-                <div 
-                  key={tx.id} 
+                <div
+                  key={tx.id}
                   className={`p-4 flex justify-between items-center ${index !== stats.transactions.length - 1 ? 'border-b-2 border-black' : ''} ${index % 2 === 0 ? 'bg-black/10' : ''}`}
                 >
                   <div className="flex items-center gap-3">
@@ -181,7 +186,7 @@ export default function App() {
                     <div>
                       <p className="font-black text-sm text-white">{tx.description}</p>
                       <p className="text-xs text-slate-500 font-bold">
-                        Kategori: {tx.category} • {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
+                        Kategori: {tx.category} • {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
