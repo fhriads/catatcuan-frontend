@@ -39,7 +39,7 @@ export default function LoginVerify() {
           localStorage.setItem('user_session', JSON.stringify(resData.user));
           
           // Redirect instan menggunakan replace tanpa jeda lama
-          window.location.replace('/');
+          window.location.replace('/dashboard');
         } else {
           setStatusMessage('❌ Link login sudah kedaluwarsa atau tidak valid gans!');
           setTimeout(() => { window.location.href = '/login'; }, 2000);

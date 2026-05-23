@@ -4,9 +4,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import App from './App.jsx'
 import Login from './Login.jsx'
 import LoginVerify from './LoginVerify.jsx'
+import LandingPage from './LandingPage.jsx' // 🎯 1. SUDAH SAYA IMPORT DI SINI GANS
 import './index.css'
 
-// Komponen Proteksi Halaman (Guard)
+// Komponen Proteksi Halaman Dashboard
 const ProtectedRoute = ({ children }) => {
   const session = localStorage.getItem('user_session');
   if (!session) {
@@ -19,9 +20,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* 🎯 SEKARANG JALUR UTAMA (/) ADALAH DASHBOARD YANG DIPROTEKSI */}
+        {/* 🎯 2. JALUR UTAMA (/) SEKARANG ADALAH LANDING PAGE ESTETIK KAMU */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* 🎯 3. DASHBOARD PINDAH KE /dashboard (TETAP AMAN DIJAGA GEMBOK) */}
         <Route 
-          path="/" 
+          path="/dashboard" 
           element={
             <ProtectedRoute>
               <App />
@@ -35,7 +39,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         {/* Halaman Penerima Tautan Telegram */}
         <Route path="/login-verify" element={<LoginVerify />} />
 
-        {/* Jika ada user nyasar mengetik url aneh, otomatis oper ke halaman utama (/) */}
+        {/* Jika ada user nyasar mengetik url aneh, otomatis balik ke Landing Page (/) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
