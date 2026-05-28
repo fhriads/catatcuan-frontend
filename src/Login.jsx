@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { MessageSquare, ShieldCheck, ArrowRight } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.catatcuan.biz.id';
 
 const Login = () => {
   const navigate = useNavigate();
 
-  // State Autentikasi gans
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [step, setStep] = useState(1); // Step 1: Username, Step 2: OTP
+  const [step, setStep] = useState(1);
 
-  // State UI Feedback
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 📡 AKSI 1: Request OTP 24 Jam via Telegram Bot
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     if (!username) {
-      setError('Isi username Telegram-mu dulu gans!');
+      setError('Silakan masukkan nama pengguna Telegram Anda.');
       return;
     }
 
@@ -28,29 +28,28 @@ const Login = () => {
     setSuccessMsg('');
 
     try {
-      const response = await axios.post('https://api.catatcuan.biz.id/api/auth/request-otp', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/request-otp`, {
         username: username.trim()
       });
 
       if (response.data.success) {
-        setSuccessMsg('KODE OTP MELUNCUR! Cek chat personal bot Telegram-mu gans! 🔐');
+        setSuccessMsg('Kode verifikasi OTP telah dikirimkan ke akun Telegram Anda.');
         setStep(2);
       } else {
-        setError(response.data.message || 'Gagal meracik OTP gans.');
+        setError(response.data.message || 'Gagal memproses permintaan OTP.');
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Username tidak ditemukan! Ketik /start dulu di bot gans.');
+      setError(err.response?.data?.message || 'Nama pengguna tidak ditemukan. Pastikan Anda telah mengaktifkan bot.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔐 AKSI 2: Validasi OTP & Kunci Session Permanen
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otpCode) {
-      setError('Masukkan 6-digit kode OTP-mu gans!');
+      setError('Silakan masukkan 6-digit kode OTP Anda.');
       return;
     }
 
@@ -58,7 +57,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('https://api.catatcuan.biz.id/api/auth/verify-otp', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
         username: username.trim(),
         otp: otpCode.trim()
       });
@@ -69,85 +68,85 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(resData.user));
         navigate('/dashboard');
       } else {
-        setError(resData.message || 'Kode OTP salah atau sudah kedaluwarsa gans!');
+        setError(resData.message || 'Kode OTP tidak valid atau telah kedaluwarsa.');
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Gagal jabat tangan OTP. Silakan coba lagi.');
+      setError(err.response?.data?.message || 'Gagal melakukan verifikasi otentikasi.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F4F0] text-black flex flex-col justify-center items-center p-4 font-sans selection:bg-[#FFDE4D]">
+    <div className="min-h-screen bg-[#F3F7FA] text-[#1E293B] flex flex-col justify-center items-center p-4 font-sans selection:bg-[#74C7ED]">
 
-      {/* 🍱 CARD UTAMA: MENGIKUTI BAHASA DESAIN GAMBAR NOMOR 2 */}
-      <div className="w-full max-w-md bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000000] rounded-xl transition-all">
+      {/* CARD OTENTIKASI */}
+      <div className="w-full max-w-md bg-white border-2 border-black p-8 shadow-[6px_6px_0px_0px_#000000] rounded-xl transition-all">
 
-        {/* HEADER BRANDING: BANNER KUNING KHAS CATATCUAN */}
+        {/* BRAND HEADER */}
         <div className="text-center mb-8">
-          <span className="font-black text-2xl md:text-3xl tracking-tighter uppercase block">
-            💳 CATAT<span className="bg-[#FFDE4D] px-2 border-2 border-black rounded-md ml-1 shadow-[2px_2px_0px_0px_#000000]">CUAN</span>
+          <span className="font-black text-2xl tracking-tight uppercase block">
+            Catat<span className="bg-[#229ED9] text-white px-2 border-2 border-black rounded-md ml-1 shadow-[2px_2px_0px_0px_#000000]">Cuan</span>
           </span>
-          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mt-3">
-            // SECURE OTP GATEWAY v2.0
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-3">
+            // Secure Gateway Authentication
           </p>
         </div>
 
-        {/* ALERTS NOTIFIKASI */}
+        {/* NOTIFIKASI SYSTEM */}
         {error && (
-          <div className="mb-6 p-4 bg-[#FF6B6B] border-2 border-black rounded-xl font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000000]">
-            💥 ERROR: {error}
+          <div className="mb-6 p-4 bg-[#FF6B6B] text-black border-2 border-black rounded-lg font-bold text-xs shadow-[2px_2px_0px_0px_#000000]">
+            Peringatan: {error}
           </div>
         )}
         {successMsg && (
-          <div className="mb-6 p-4 bg-[#6BCB77] border-2 border-black rounded-xl font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000000]">
-            🎉 SUCCESS: {successMsg}
+          <div className="mb-6 p-4 bg-[#6BCB77] text-black border-2 border-black rounded-lg font-bold text-xs shadow-[2px_2px_0px_0px_#000000]">
+            Sistem: {successMsg}
           </div>
         )}
 
-        {/* 🎬 STEP 1: FORM INPUT USERNAME TELEGRAM */}
+        {/* STEP 1: INPUT USERNAME */}
         {step === 1 && (
-          <form onSubmit={handleRequestOtp} className="space-y-6">
+          <form onSubmit={handleRequestOtp} className="space-y-5">
             <div>
               <label className="block text-black font-black uppercase text-xs tracking-wider mb-2">
-                Masukkan Username Telegram gans:
+                Nama Pengguna Telegram
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-black text-base">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400 text-base">
                   @
                 </span>
                 <input
                   type="text"
-                  placeholder="username_kamu (tanpa @)"
+                  placeholder="username_anda"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-4 bg-white border-2 border-black rounded-xl text-black font-extrabold placeholder-gray-400 focus:outline-none focus:border-[#FFDE4D] transition-colors"
+                  className="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-black rounded-lg text-black font-bold placeholder-gray-400 focus:outline-none focus:border-[#229ED9] transition-colors"
                 />
               </div>
-              <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase">
-                *Pastikan kamu sudah mengetik /start di bot Telegram.
+              <p className="text-[10px] font-bold text-gray-400 mt-2">
+                *Inisialisasi akun memerlukan perintah /start pada bot resmi.
               </p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#FFDE4D] text-black font-black uppercase tracking-wider border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#229ED9] text-white font-black uppercase text-xs tracking-wider border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
             >
-              {loading ? '⚡ MERACIK OTP...' : '🚀 REQUEST OTP CODE'}
+              {loading ? 'Memproses Permintaan...' : 'Minta Kode OTP'}
             </button>
           </form>
         )}
 
-        {/* 🎬 STEP 2: FORM INPUT KODE OTP 6-DIGIT */}
+        {/* STEP 2: INPUT KODE OTP */}
         {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div>
               <label className="block text-black font-black uppercase text-xs tracking-wider mb-2">
-                Masukkan 6-Digit OTP Keamanan:
+                6-Digit Kode Keamanan
               </label>
               <input
                 type="text"
@@ -156,18 +155,18 @@ const Login = () => {
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 disabled={loading}
-                className="w-full px-4 py-3 bg-white border-2 border-black rounded-xl text-black font-black text-center text-2xl tracking-[0.4em] focus:outline-none focus:border-[#4D96FF] transition-colors"
+                className="w-full px-4 py-3 bg-white border-2 border-black rounded-lg text-black font-black text-center text-xl tracking-[0.4em] focus:outline-none focus:border-[#74C7ED] transition-colors"
               />
               <div className="flex justify-between items-center mt-3">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">
-                  *VALID FOR 24 HOURS
+                <span className="text-[9px] font-bold text-gray-400">
+                  Masa Berlaku Sesi: 24 Jam
                 </span>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-xs font-black text-black underline bg-[#FFDE4D] px-2 py-0.5 border-2 border-black rounded-md uppercase tracking-wider shadow-[1px_1px_0px_0px_#000000]"
+                  className="text-[10px] font-black text-black underline bg-[#74C7ED] px-2 py-0.5 border-2 border-black rounded shadow-[1px_1px_0px_0px_#000000]"
                 >
-                  [ UBAH USER ]
+                  Ubah Pengguna
                 </button>
               </div>
             </div>
@@ -175,19 +174,19 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#4D96FF] text-black font-black uppercase tracking-wider border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#74C7ED] text-black font-black uppercase text-xs tracking-wider border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
             >
-              {loading ? '🔐 VERIFYING...' : '🔓 ACCESS DASHBOARD'}
+              {loading ? 'Memverifikasi Otentikasi...' : 'Verifikasi & Akses Masuk'}
             </button>
           </form>
         )}
 
       </div>
 
-      {/* FOOTER EMBLEM BARU SINKRON 100% */}
+      {/* FOOTER METRIC */}
       <div className="mt-8 text-center">
-        <span className="bg-[#6BCB77] text-[10px] font-black tracking-widest uppercase px-3 py-1 border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000000]">
-          🔥 BY DISSZ DEV — GENERASI ANTI BONCOS
+        <span className="bg-black text-white text-[10px] font-mono tracking-widest uppercase px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#229ED9]">
+          CatatCuan Financial Technology Ecosystem © 2026
         </span>
       </div>
     </div>
