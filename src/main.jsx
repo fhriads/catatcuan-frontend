@@ -1,46 +1,40 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import App from './App.jsx'
-import Login from './Login.jsx'
-import LandingPage from './LandingPage.jsx' // 🎯 1. SUDAH SAYA IMPORT DI SINI GANS
 import './index.css'
+import App from './App.jsx'
+import LandingPage from './LandingPage.jsx'
+import Login from './Login.jsx'
 
-// Komponen Proteksi Halaman Dashboard
+// Komponen ProtectedRoute sederhana untuk mengunci dashboard gans
 const ProtectedRoute = ({ children }) => {
-  const session = localStorage.getItem('user_session');
-  if (!session) {
+  const token = localStorage.getItem('token');
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* 🎯 2. JALUR UTAMA (/) SEKARANG ADALAH LANDING PAGE ESTETIK KAMU */}
+        {/* Jalur Halaman Utama */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* 🎯 3. DASHBOARD PINDAH KE /dashboard (TETAP AMAN DIJAGA GEMBOK) */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Halaman Login */}
+        {/* Jalur Login OTP Baru Kebanggaan DISSZ DEV */}
         <Route path="/login" element={<Login />} />
 
-        {/* Halaman Penerima Tautan Telegram */}
-        <Route path="/login-verify" element={<LoginVerify />} />
+        {/* Jalur Dashboard Visual Bento UI (Dikunci Proteksi Token) */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <App />
+          </ProtectedRoute>
+        } />
 
-        {/* Jika ada user nyasar mengetik url aneh, otomatis balik ke Landing Page (/) */}
+        {/* Emergency Redirect: Kalau rute ngawur, auto lempar ke Landing Page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>,
+  </StrictMode>,
 )

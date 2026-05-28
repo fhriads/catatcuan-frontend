@@ -4,18 +4,18 @@ import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
-  
+
   // State Autentikasi gans
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [step, setStep] = useState(1); // Step 1: Input Username, Step 2: Input OTP
-  
+  const [step, setStep] = useState(1); // Step 1: Username, Step 2: OTP
+
   // State UI Feedback
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 📡 AKSI 1: Minta Kode OTP 24 Jam ke Telegram Bot
+  // 📡 AKSI 1: Request OTP 24 Jam via Telegram Bot
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     if (!username) {
@@ -28,26 +28,25 @@ const Login = () => {
     setSuccessMsg('');
 
     try {
-      // Menembak endpoint OTP terpadu yang kita buat di server Asus tadi gans
       const response = await axios.post('https://api.catatcuan.biz.id/api/auth/request-otp', {
         username: username.trim()
       });
 
       if (response.data.success) {
-        setSuccessMsg('KODE OTP meluncur! Cek chat bot Telegram-mu gans! 🔐');
-        setStep(2); // Lolos maju ke step input OTP
+        setSuccessMsg('KODE OTP MELUNCUR! Cek chat personal bot Telegram-mu gans! 🔐');
+        setStep(2);
       } else {
         setError(response.data.message || 'Gagal meracik OTP gans.');
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Username belum terdaftar! Ketik /start dulu di bot gans.');
+      setError(err.response?.data?.message || 'Username tidak ditemukan! Ketik /start dulu di bot gans.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔐 AKSI 2: Validasi OTP & Kunci Session Permanen (Persistent Session)
+  // 🔐 AKSI 2: Validasi OTP & Kunci Session Permanen
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otpCode) {
@@ -66,48 +65,45 @@ const Login = () => {
 
       const resData = response.data;
       if (resData.success && resData.token) {
-        // 🔥 AMUNISI SAKRAL: Kunci token permanen di browser HP OnePlus / Laptop-mu gans!
         localStorage.setItem('token', resData.token);
         localStorage.setItem('user', JSON.stringify(resData.user));
-        
-        // Hancurkan rintangan, langsung jebol masuk dashboard visual Bento UI!
         navigate('/dashboard');
       } else {
         setError(resData.message || 'Kode OTP salah atau sudah kedaluwarsa gans!');
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Gagal jabat tangan OTP. Coba minta kode baru.');
+      setError(err.response?.data?.message || 'Gagal jabat tangan OTP. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-[#0F172A] flex flex-col justify-center items-center p-6 font-sans transition-colors duration-300">
-      
-      {/* 💳 CARD UTAMA STYLE NEO-BRUTALISM DISSZ DEV */}
-      <div className="w-full max-w-md bg-white dark:bg-[#1E293B] border-4 border-black dark:border-[#38BDF8] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(56,189,248,0.2)] rounded-xl transition-all">
-        
-        {/* BRANDING LOGO */}
+    <div className="min-h-screen bg-[#F4F4F0] text-black flex flex-col justify-center items-center p-4 font-sans selection:bg-[#FFDE4D]">
+
+      {/* 🍱 CARD UTAMA: MENGIKUTI BAHASA DESAIN GAMBAR NOMOR 2 */}
+      <div className="w-full max-w-md bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_#000000] rounded-xl transition-all">
+
+        {/* HEADER BRANDING: BANNER KUNING KHAS CATATCUAN */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-black dark:text-white tracking-tight uppercase">
-            Catat<span className="text-[#10B981] dark:text-[#34D399]">Cuan</span>
-          </h1>
-          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mt-2">
-            Secure OTP Web Authentication Gateway
+          <span className="font-black text-2xl md:text-3xl tracking-tighter uppercase block">
+            💳 CATAT<span className="bg-[#FFDE4D] px-2 border-2 border-black rounded-md ml-1 shadow-[2px_2px_0px_0px_#000000]">CUAN</span>
+          </span>
+          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mt-3">
+            // SECURE OTP GATEWAY v2.0
           </p>
         </div>
 
-        {/* NOTIFIKASI ERROR / SUKSES STYLE NEO-BRUTALISM */}
+        {/* ALERTS NOTIFIKASI */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-950/50 border-2 border-black dark:border-red-500 text-red-700 dark:text-red-400 font-bold rounded-lg text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            💥 {error}
+          <div className="mb-6 p-4 bg-[#FF6B6B] border-2 border-black rounded-xl font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000000]">
+            💥 ERROR: {error}
           </div>
         )}
         {successMsg && (
-          <div className="mb-6 p-4 bg-emerald-100 dark:bg-emerald-950/50 border-2 border-black dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 font-bold rounded-lg text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            🎉 {successMsg}
+          <div className="mb-6 p-4 bg-[#6BCB77] border-2 border-black rounded-xl font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000000]">
+            🎉 SUCCESS: {successMsg}
           </div>
         )}
 
@@ -115,33 +111,33 @@ const Login = () => {
         {step === 1 && (
           <form onSubmit={handleRequestOtp} className="space-y-6">
             <div>
-              <label className="block text-black dark:text-white font-black uppercase text-sm tracking-wider mb-2">
-                Telegram Username gans:
+              <label className="block text-black font-black uppercase text-xs tracking-wider mb-2">
+                Masukkan Username Telegram gans:
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-black dark:text-gray-400 text-lg">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-black text-base">
                   @
                 </span>
                 <input
                   type="text"
-                  placeholder="fahri_ads (tanpa tanda @)"
+                  placeholder="username_kamu (tanpa @)"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#0F172A] border-3 border-black dark:border-gray-700 text-black dark:text-white font-bold rounded-lg focus:outline-none focus:border-[#10B981] dark:focus:border-[#34D399] transition-all text-base"
+                  className="w-full pl-10 pr-4 py-4 bg-white border-2 border-black rounded-xl text-black font-extrabold placeholder-gray-400 focus:outline-none focus:border-[#FFDE4D] transition-colors"
                 />
               </div>
-              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mt-2">
-                *Pastikan kamu sudah mengetik /start di bot Telegram CatatCuan.
+              <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase">
+                *Pastikan kamu sudah mengetik /start di bot Telegram.
               </p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#10B981] hover:bg-[#059669] text-black font-black uppercase tracking-wider border-3 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#FFDE4D] text-black font-black uppercase tracking-wider border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
             >
-              {loading ? '⚡ Sedang Meracik OTP...' : '🚀 Ambil Kode OTP'}
+              {loading ? '⚡ MERACIK OTP...' : '🚀 REQUEST OTP CODE'}
             </button>
           </form>
         )}
@@ -150,28 +146,28 @@ const Login = () => {
         {step === 2 && (
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div>
-              <label className="block text-black dark:text-white font-black uppercase text-sm tracking-wider mb-2">
+              <label className="block text-black font-black uppercase text-xs tracking-wider mb-2">
                 Masukkan 6-Digit OTP Keamanan:
               </label>
               <input
                 type="text"
                 maxLength="6"
-                placeholder="Ex: 582910"
+                placeholder="000000"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 disabled={loading}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-[#0F172A] border-3 border-black dark:border-gray-700 text-black dark:text-white font-black rounded-lg focus:outline-none focus:border-[#38BDF8] tracking-[0.5em] text-center text-2xl transition-all"
+                className="w-full px-4 py-3 bg-white border-2 border-black rounded-xl text-black font-black text-center text-2xl tracking-[0.4em] focus:outline-none focus:border-[#4D96FF] transition-colors"
               />
               <div className="flex justify-between items-center mt-3">
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">
-                  *Berlaku 1x24 jam di browser ini gans.
-                </p>
+                <span className="text-[10px] font-bold text-gray-400 uppercase">
+                  *VALID FOR 24 HOURS
+                </span>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-xs font-black text-[#38BDF8] hover:underline uppercase tracking-wider"
+                  className="text-xs font-black text-black underline bg-[#FFDE4D] px-2 py-0.5 border-2 border-black rounded-md uppercase tracking-wider shadow-[1px_1px_0px_0px_#000000]"
                 >
-                  ← Ganti Username
+                  [ UBAH USER ]
                 </button>
               </div>
             </div>
@@ -179,18 +175,20 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#38BDF8] hover:bg-[#0EA5E9] text-black font-black uppercase tracking-wider border-3 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50"
+              className="w-full py-4 bg-[#4D96FF] text-black font-black uppercase tracking-wider border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000000] cursor-pointer hover:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
             >
-              {loading ? '🔐 Memverifikasi...' : '🔓 Masuk Dashboard'}
+              {loading ? '🔐 VERIFYING...' : '🔓 ACCESS DASHBOARD'}
             </button>
           </form>
         )}
 
       </div>
 
-      {/* FOOTER EMBLEM DISSZ DEV */}
-      <div className="mt-8 text-xs font-bold text-gray-400 dark:text-gray-600 tracking-widest uppercase">
-        © 2026 DISSZ DEV • Crafted for Dr. Soetomo University Project
+      {/* FOOTER EMBLEM BARU SINKRON 100% */}
+      <div className="mt-8 text-center">
+        <span className="bg-[#6BCB77] text-[10px] font-black tracking-widest uppercase px-3 py-1 border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000000]">
+          🔥 BY DISSZ DEV — GENERASI ANTI BONCOS
+        </span>
       </div>
     </div>
   );
