@@ -6,7 +6,7 @@ export default function LandingPage() {
     const navigate = useNavigate();
 
     const handleConnectTelegram = () => {
-        window.open('https://t.me/catatcuan_bot', '_blank');
+        window.open('https://t.me/catatcuan_dev_bot', '_blank');
     };
 
     return (
